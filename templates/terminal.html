@@ -1,0 +1,162 @@
+<html>
+<head>
+    <title>Log Terrace</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link href='https://fonts.googleapis.com/css?family=Inconsolata' rel='stylesheet' type='text/css'>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.8/socket.io.min.js"></script>
+    <script>
+
+        var tail = false;
+
+        $(document).ready(function(){
+            $('input').focus();
+            ctrlKey = 17,
+            cKey = 67;
+            ctrlDown = false;
+
+            $(document).keydown(function(e) {
+                if (e.keyCode === ctrlKey && e.keyCode === cKey) {
+                    command('cancel');
+                }
+            });
+
+            $(document).keydown(function(e) {
+                if (e.keyCode === ctrlKey) ctrlDown = true;
+            }).keyup(function(e) {
+                if (e.keyCode === ctrlKey) ctrlDown = false;
+            });
+
+            $(document).keydown(function(e) {
+                if (ctrlDown &&  e.keyCode === cKey) {
+                    command('cancel');
+                }
+
+            });
+            $("#date").append(new Date().toString())
+        });
+
+        var sock;
+
+        $(document).ready(function(){
+            sock = io.connect('http://localhost:5000');
+
+            sock.on('message', function(msg){
+                if (tail === true) {
+                    var div = document.createElement("DIV");
+                    var br = document.createElement("BR");
+                    var divText = document.createTextNode(msg.body);
+                    div.appendChild(divText);
+                    div.appendChild(br);
+                    document.body.appendChild(div);
+                }
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+        });
+
+        function command(msg) {
+            deviceId = msg.split(' ')[1];
+            msg = msg.split(' ')[0];
+
+            if (msg === 'cat') {
+                $.get('devices/' + deviceId, function(data) {
+                        data.forEach(function (device) {
+                            var div = document.createElement("DIV");
+                            var br = document.createElement("BR");
+                            var divText1 = document.createTextNode(device.device_id + " - " + device.time + " - " + device.msg);
+                            div.appendChild(divText1);
+                            div.appendChild(br);
+                            document.body.appendChild(div);
+                        }, data);
+                        AddNewPrompt();
+                    });
+            } else {
+                switch(msg) {
+                case 'tail':
+                    tail = true;
+                    var div = document.createElement("DIV");
+                    var br = document.createElement("BR");
+                    var divText1 = document.createTextNode('tail -f log, Use Ctrl-C to exit');
+                    div.appendChild(divText1);
+                    div.appendChild(br);
+                    document.body.appendChild(div);
+                    $('input').blur();
+                    window.scrollTo(0, document.body.scrollHeight);
+                    break;
+                case 'cancel':
+                    tail = false;
+                    AddNewPrompt();
+                    break;
+                case 'ls':
+                    $.get('devices', function(data) {
+                        data.forEach(function (device) {
+                            var div = document.createElement("DIV");
+                            var br = document.createElement("BR");
+                            var divText1 = document.createTextNode(device.device_id);
+                            div.appendChild(divText1);
+                            div.appendChild(br);
+                            document.body.appendChild(div);
+                        }, data);
+                        AddNewPrompt();
+                    });
+                    break;
+                }
+            }
+        }
+
+        function AddNewPrompt() {
+            var key = 'if(event.keyCode == 13)command(this.value);';
+            var span = document.createElement("SPAN");
+            var spanText = document.createTextNode("[log-terrace]$ > ");
+            span.setAttribute("id", "prompt");
+            span.appendChild(spanText);
+            document.body.appendChild(span);
+
+            var input = document.createElement("INPUT");
+            input.setAttribute("type", "text");
+            input.setAttribute("onkeydown", key);
+            document.body.appendChild(input).focus();
+
+            var br = document.createElement("br");
+            document.body.appendChild(br);
+        }
+
+    </script>
+    <style>
+        body
+        {
+            background-color: black;
+            color: white;
+            font-family: "Courier New", serif;
+            font-size : 15pt;
+            margin-left: 20px;
+            margin-top: 20px;
+        }
+        input
+        {
+            font-family: 'Courier New', serif;
+            font-size:15pt;
+            background-color: black;
+            border: none;
+            color:white;
+            outline:none;
+        }
+        #prompt
+        {
+            color: #37c64f;
+        }
+    </style>
+</head>
+<body>
+<div id="total_body">
+    <span>Log Terrace</span><br/>
+    <span id="date"></span><br/><br/>
+    <span>https://github.com/ysslabs</span><br/><br/>
+    <span id="prompt">[log-terrace]$ > </span>
+    <input id="cmd" name="cmd" type="text" onkeydown="if(event.keyCode == 13)command(this.value);">
+
+</div>
+</body>
+</html>
+
+
