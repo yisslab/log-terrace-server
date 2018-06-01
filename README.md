@@ -15,5 +15,7 @@ http://localhost:5000/terminal
 
 ### Command
 ls - Show all devices
+
 tail - Show logs in real time
+
 cat {device_id} - Shoe logs for a specific device
